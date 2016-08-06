@@ -37,8 +37,6 @@ public class LoginActivity extends AppCompatActivity {
     // UI references.
     private EditText mEmailView;
     private EditText mPasswordView;
-    private View mProgressView;
-    private View mLoginFormView;
     private TextView failedLoginMessage;
 
     View focusView = null;
@@ -76,14 +74,11 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
 
-        mLoginFormView = findViewById(R.id.login_form);
-        mProgressView = findViewById(R.id.login_progress);
-
-
+        //redirect to Main  screen if user email exists  We should work here with tokens if the REST service is functional
         final SharedPreferences prefs = this.getSharedPreferences("pref", Context.MODE_PRIVATE);
         String email =prefs.getString("email","");
         if(!email.equals(""))
-            attemptLogin();
+            startMain();
     }
 
     private void attemptLogin(){
@@ -93,10 +88,7 @@ public class LoginActivity extends AppCompatActivity {
         String isError = checkCredentials(email,password);
         if (isError.equals("")) {
             // redirect to Main Activity page
-            Intent main = new Intent(LoginActivity.this, MainActivity.class);
-            SharedPreferences prefs = this.getSharedPreferences("pref", Context.MODE_PRIVATE);
-            prefs.edit().putString("email", email).apply();
-            startActivity(main);
+            startMain();
 
             // Unfortunatelly this part is not  working properly. There is some exception without explanation
             // loginProcessWithRetrofit(email, password);
@@ -108,7 +100,14 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
-public  String checkCredentials(String email, String password)
+    private void startMain() {
+        Intent main = new Intent(LoginActivity.this, MainActivity.class);
+        SharedPreferences prefs = this.getSharedPreferences("pref", Context.MODE_PRIVATE);
+        prefs.edit().putString("email", email).apply();
+        startActivity(main);
+    }
+
+    public  String checkCredentials(String email, String password)
 {
  String   testEmail ="jaskobh@hotmail.com";
     String  testPassword = "123456";
@@ -155,8 +154,6 @@ public  String checkCredentials(String email, String password)
 
     private void loginProcessWithRetrofit(final String email, String password){
       //  ApiInterface mApiService =   this.getInterfaceService();
-
-
          Call<Session> mService=null;
         try {
              mService = RestClient.getClient().newsession(email, password);
