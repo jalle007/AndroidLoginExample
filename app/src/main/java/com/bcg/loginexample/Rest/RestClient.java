@@ -6,7 +6,7 @@ package com.bcg.loginexample.Rest;
 
 import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;
-import retrofit2.converter.jackson.JacksonConverterFactory;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 public final class RestClient {
 
@@ -24,7 +24,7 @@ public final class RestClient {
                     // Using custom Jackson Converter to parse JSON
                     // Add dependencies:
                     // com.squareup.retrofit:converter-jackson:2.0.0-beta2
-                    .addConverterFactory(JacksonConverterFactory.create())
+                    .addConverterFactory(GsonConverterFactory.create())
                     // Endpoint
                     .baseUrl(ApiInterface.ENDPOINT)
                     .client(client)

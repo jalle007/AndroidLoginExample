@@ -1,11 +1,8 @@
 package com.bcg.loginexample;
 
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -17,10 +14,7 @@ import android.widget.Toast;
 
 import com.bcg.loginexample.Responses.Session;
 import com.bcg.loginexample.Rest.ApiInterface;
-import com.bcg.loginexample.Rest.FakeInterceptor;
-import com.bcg.loginexample.Rest.RestClient;
 
-import okhttp3.OkHttpClient;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -31,6 +25,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
  * A login screen that offers login via email/password.
  */
 public class LoginActivity extends AppCompatActivity {
+    public Settings settings;
 
     public static final String BASE_URL = ApiInterface.ENDPOINT;
 
@@ -48,9 +43,12 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
+         settings =new Settings(getApplicationContext());
+         settings = settings.getSettings();
+
+     //  settings.saveSettings("","","","");
         // Set up the login form.
         mEmailView = (EditText) findViewById(R.id.email);
-
         failedLoginMessage = (TextView)findViewById(R.id.failed_login);
 
         mPasswordView = (EditText) findViewById(R.id.password);
@@ -69,126 +67,56 @@ public class LoginActivity extends AppCompatActivity {
         mEmailSignInButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                failedLoginMessage.setText("");
-                attemptLogin();
+              attemptLogin();
+
             }
         });
 
-        //redirect to Main  screen if user email exists  We should work here with tokens if the REST service is functional
-        final SharedPreferences prefs = this.getSharedPreferences("pref", Context.MODE_PRIVATE);
-        String email =prefs.getString("email","");
-        if(!email.equals(""))
-            startMain();
+         if(settings.token!="")
+             startMain();
+
+        // uploadAvatar("my_userid")
+       //getuser("my_userid");
     }
 
-    private void attemptLogin(){
-        email=mEmailView.getText().toString();
-        password=mPasswordView.getText().toString();
 
-        String isError = checkCredentials(email,password);
-        if (isError.equals("")) {
-            // redirect to Main Activity page
-            startMain();
 
-            // Unfortunatelly this part is not  working properly. There is some exception without explanation
-            // loginProcessWithRetrofit(email, password);
-
-        } else {
-            //  show error
-            failedLoginMessage.setText(isError);
-            mEmailView.requestFocus();
-        }
-    }
 
     private void startMain() {
         Intent main = new Intent(LoginActivity.this, MainActivity.class);
-        SharedPreferences prefs = this.getSharedPreferences("pref", Context.MODE_PRIVATE);
-        prefs.edit().putString("email", email).apply();
         startActivity(main);
     }
 
-    public  String checkCredentials(String email, String password)
-{
- String   testEmail ="jaskobh@hotmail.com";
-    String  testPassword = "123456";
-
-
-    if(email.equals(testEmail))
-    {
-        if(password.equals(testPassword))
-        {
-           return ""; //no error credentials are valid
-        }else
-         {
-           // failedLoginMessage.setText("Wrong password. Try again.");
-          //  mPasswordView.requestFocus();
-             return "Wrong password. Try again.";
-        }
-        }else
-             {
-       //failedLoginMessage.setText("Unknown user");
-       // mEmailView.requestFocus();
-                 return "Unknown user";
-    }
-  }
-
-
 
     private ApiInterface getInterfaceService() {
-        final OkHttpClient client = new OkHttpClient.Builder()
-                .addInterceptor(new FakeInterceptor())
-                                .build();
-   //     .addConverterFactory(GsonConverterFactory.create())
-    //    .addConverterFactory(JacksonConverterFactory.create())
-
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(BASE_URL)
                 .addConverterFactory(GsonConverterFactory.create())
-                .client(client)
                 .build();
-
         final ApiInterface mInterfaceService = retrofit.create(ApiInterface.class);
         return mInterfaceService;
     }
 
 
+
     private void loginProcessWithRetrofit(final String email, String password){
-      //  ApiInterface mApiService =   this.getInterfaceService();
-         Call<Session> mService=null;
-        try {
-             mService = RestClient.getClient().newsession(email, password);
-
-        }catch (Exception e)
-        {
-            Log.v("err", e.getMessage());
-        }
-       /* Call<Session> mService=null;
-        try {
-             mService = mApiService.newsession(email, password);
-
-        }catch (Exception e)
-        {}
-*/
+      ApiInterface mApiService = ApiInterface.retrofit.create(ApiInterface.class);
+          Call<Session> mService=  mApiService.newsession(email,password);
         mService.enqueue(new Callback<Session>() {
             @Override
             public void onResponse(Call<Session> call, Response<Session> response) {
-
-                Session mLoginObject = response.body();
-                String returnedResponse = mLoginObject.token;
-                Toast.makeText(LoginActivity.this, "Returned " + returnedResponse, Toast.LENGTH_LONG).show();
-
-                //showProgress(false);
-                if(returnedResponse.trim().equals("true")){
-                    // redirect to Main Activity page
-                    Intent loginIntent = new Intent(LoginActivity.this, MainActivity.class);
-                    loginIntent.putExtra("email", email);
-                    startActivity(loginIntent);
+                Session mSession = response.body();
+                if (mSession.token!="")
+                {
+                    settings =new Settings(getApplicationContext(), email, mSession.userid,mSession.token,null);
+                    startMain();
+                }else
+                {
+                    //  show error
+                    failedLoginMessage.setText("Wrong username or password. Try again");
+                    mEmailView.requestFocus();
                 }
-                if(returnedResponse.trim().equals("false")){
 
-                    failedLoginMessage.setText("Login failed. Try again.");
-                    mPasswordView.requestFocus();
-                }
             }
 
             @Override
@@ -198,5 +126,13 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
     }
+
+
+    private void attemptLogin(){
+        email=mEmailView.getText().toString();
+        password=mPasswordView.getText().toString();
+        loginProcessWithRetrofit(email,password);
     }
+
+}
 

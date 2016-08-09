@@ -1,10 +1,10 @@
 <resources>
-<string name="picture">Picture</string>
+    <string name="picture">Picture</string>
     <string name="description_info">Info</string>
     <string name="request_permission">This sample needs camera permission.</string>
     <string name="camera_error">This device doesn\'t support Camera2 API.</string>
 
-    <string name="app_name">BCG login example</string>
+    <string name="app_name">BCG login example v2</string>
 
     <!-- Strings related to login -->
     <string name="prompt_email">Email</string>
